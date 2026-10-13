@@ -14,7 +14,8 @@ let answer ~card ~authorizations ~balances (request : Authorization.Request.t) =
     ; usage
     ; available = Ledger.Balances.available balances card.account card.currency
     ; sca_policy = Card_sca.Policy.default
-    ; sca_counters = Payments_core.Sca.Counters.zero (* the cardholder's, from your store *)
+    ; sca_counters =
+        Payments_core.Sca.Counters.zero (* the cardholder's, from your store *)
     ; request
     ; open_auth = None
     }
@@ -32,7 +33,12 @@ let answer ~card ~authorizations ~balances (request : Authorization.Request.t) =
 let clear ~card ~auth ~balances (clearing : Settlement.Clearing.t) =
   let open Or_error.Let_syntax in
   let%bind outcome = Settlement.settle clearing ~auth:(Some auth) in
-  Booking.settled Booking.Chart.default balances card clearing outcome
+  Booking.settled
+    Booking.Chart.default
+    balances
+    card
+    clearing
+    outcome
     ~event_id:"provider-event-2"
 ;;
 

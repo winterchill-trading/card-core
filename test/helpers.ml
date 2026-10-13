@@ -116,7 +116,9 @@ let ledger ?(deposit = eur "100.00") () =
   in
   let b =
     List.fold accounts ~init:Ledger.Balances.empty ~f:(fun b a ->
-      Ledger.Balances.apply b { seq = Ledger.Balances.next_seq b; event = Account_opened a }
+      Ledger.Balances.apply
+        b
+        { seq = Ledger.Balances.next_seq b; event = Account_opened a }
       |> Or_error.ok_exn)
   in
   let entry =
@@ -132,7 +134,9 @@ let ledger ?(deposit = eur "100.00") () =
   Payments_core.Booking.apply b [ entry ] |> Or_error.ok_exn
 ;;
 
-let book b entries = Payments_core.Booking.apply b (Or_error.ok_exn entries) |> Or_error.ok_exn
+let book b entries =
+  Payments_core.Booking.apply b (Or_error.ok_exn entries) |> Or_error.ok_exn
+;;
 
 let show_balances b =
   let cur = Money.Currency.eur in
@@ -161,7 +165,17 @@ let show_entries entries =
         (Money.Amount.to_string p.amount)))
 ;;
 
-let clearing ?(id = "clr-1") ?(auth_id = Some "auth-1") ?(direction = Settlement.Direction.Debit) ?(final = true) ?merchant:m ?rate ?fx_fee ?(at = at 60) amount =
+let clearing
+  ?(id = "clr-1")
+  ?(auth_id = Some "auth-1")
+  ?(direction = Settlement.Direction.Debit)
+  ?(final = true)
+  ?merchant:m
+  ?rate
+  ?fx_fee
+  ?(at = at 60)
+  amount
+  =
   Settlement.Clearing.create
     ~id:(Ids.Clearing_id.of_string id)
     ~card_id

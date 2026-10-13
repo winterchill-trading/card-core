@@ -49,12 +49,10 @@ let%expect_test "parsing" =
 ;;
 
 let%test_unit "response code text round trip" =
-  Quickcheck.test
-    (Quickcheck.Generator.of_list Response_code.all_known)
-    ~f:(fun code ->
-      [%test_result: Response_code.t]
-        (Response_code.of_string_or_error (Response_code.to_string code) |> Or_error.ok_exn)
-        ~expect:code)
+  Quickcheck.test (Quickcheck.Generator.of_list Response_code.all_known) ~f:(fun code ->
+    [%test_result: Response_code.t]
+      (Response_code.of_string_or_error (Response_code.to_string code) |> Or_error.ok_exn)
+      ~expect:code)
 ;;
 
 let%expect_test "merchant category codes" =
@@ -62,8 +60,9 @@ let%expect_test "merchant category codes" =
   print_s [%sexp (Mcc.of_int 10000 : Mcc.t Or_error.t)];
   print_s
     [%sexp
-      (List.map [ Mcc.lodging; Mcc.vehicle_rental; Mcc.cruise; Mcc.fuel; Mcc.atm ] ~f:(fun m ->
-         m, Mcc.has_long_hold m, Mcc.is_atm m)
+      (List.map
+         [ Mcc.lodging; Mcc.vehicle_rental; Mcc.cruise; Mcc.fuel; Mcc.atm ]
+         ~f:(fun m -> m, Mcc.has_long_hold m, Mcc.is_atm m)
        : (Mcc.t * bool * bool) list)];
   [%expect
     {|

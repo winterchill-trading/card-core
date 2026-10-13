@@ -25,7 +25,7 @@ let show ?(policy = Card_sca.Policy.default) ?(counters = Counters.zero) request
   print_s
     [%sexp
       (outcome : Card_sca.Outcome.t)
-    , (Card_sca.Outcome.evidence outcome request : Ledger.Sca_evidence.t option)]
+      , (Card_sca.Outcome.evidence outcome request : Ledger.Sca_evidence.t option)]
 ;;
 
 let%expect_test "3-D Secure results" =
@@ -70,15 +70,23 @@ let%expect_test "contactless: EUR 50 each, EUR 150 or 5 taps; PIN resets" =
   show (request ~entry_mode:Contactless ~cardholder_verified:true (eur "80.00"));
   let tap counters amount =
     let r = request ~entry_mode:Contactless (eur amount) in
-    Card_sca.counters_after counters r (Card_sca.decide Card_sca.Policy.default counters r)
+    Card_sca.counters_after
+      counters
+      r
+      (Card_sca.decide Card_sca.Policy.default counters r)
   in
-  let counters = List.fold [ "10.00"; "10.00"; "10.00"; "10.00"; "10.00" ] ~init:Counters.zero ~f:tap in
+  let counters =
+    List.fold [ "10.00"; "10.00"; "10.00"; "10.00"; "10.00" ] ~init:Counters.zero ~f:tap
+  in
   print_s [%sexp (counters : Counters.t)];
   show ~counters (request ~entry_mode:Contactless (eur "1.00"));
   let pin = request ~entry_mode:Contactless ~cardholder_verified:true (eur "1.00") in
   print_s
     [%sexp
-      (Card_sca.counters_after counters pin (Card_sca.decide Card_sca.Policy.default counters pin)
+      (Card_sca.counters_after
+         counters
+         pin
+         (Card_sca.decide Card_sca.Policy.default counters pin)
        : Counters.t)];
   [%expect
     {|
@@ -134,10 +142,16 @@ let%expect_test "ECI and liability shift" =
     List.iter Three_ds.Trans_status.all ~f:(fun status ->
       let eci = Three_ds.expected_eci scheme status in
       let shift =
-        Three_ds.liability_shift scheme { trans_status = status; eci; cavv_present = true }
+        Three_ds.liability_shift
+          scheme
+          { trans_status = status; eci; cavv_present = true }
       in
       print_s
-        [%sexp (scheme : Three_ds.Scheme.t), (status : Three_ds.Trans_status.t), (eci : int option), (shift : bool)]));
+        [%sexp
+          (scheme : Three_ds.Scheme.t)
+          , (status : Three_ds.Trans_status.t)
+          , (eci : int option)
+          , (shift : bool)]));
   [%expect
     {|
     (Visa Y (5) true)
@@ -170,7 +184,10 @@ let%test_unit "an exempt or out-of-scope payment always records why" =
       let amount = Money.Amount.abs amount in
       let r = request ~entry_mode ~initiator ?three_ds amount in
       let outcome =
-        Card_sca.decide { tra = true; trusted_beneficiary = true; corporate = true } Counters.zero r
+        Card_sca.decide
+          { tra = true; trusted_beneficiary = true; corporate = true }
+          Counters.zero
+          r
       in
       match outcome with
       | Required | Failed -> assert (Option.is_none (Card_sca.Outcome.evidence outcome r))

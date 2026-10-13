@@ -11,20 +11,21 @@ let codes =
          @@ sprintf
               "%s  %-20s %s"
               (Response_code.to_string code)
-           (match Response_code.category code with
-            | None -> "approved"
-            | Some c -> Sexp.to_string [%sexp (c : Response_code.Category.t)])
-           (if Response_code.is_approved code
-            then ""
-            else if Response_code.retry_allowed code
-            then "retry allowed"
-            else "do not retry"))))
+              (match Response_code.category code with
+               | None -> "approved"
+               | Some c -> Sexp.to_string [%sexp (c : Response_code.Category.t)])
+              (if Response_code.is_approved code
+               then ""
+               else if Response_code.retry_allowed code
+               then "retry allowed"
+               else "do not retry"))))
 ;;
 
 let hold_expiry =
   Command.basic
     ~summary:"How long an authorization hold stays valid for a merchant category"
-    (let%map_open.Command mcc = flag "-mcc" (required string) ~doc:"MCC four-digit category"
+    (let%map_open.Command mcc =
+       flag "-mcc" (required string) ~doc:"MCC four-digit category"
      and estimated = flag "-estimated" no_arg ~doc:" the amount is an estimate" in
      fun () ->
        let mcc = Mcc.of_string_or_error mcc |> Or_error.ok_exn in
@@ -47,7 +48,10 @@ let demo () =
       ~currency:Money.Currency.eur
       ~kind:Virtual
       ~limits:
-        (Limits.create Money.Currency.eur ~per_transaction:(eur "500.00") ~daily:(eur "800.00")
+        (Limits.create
+           Money.Currency.eur
+           ~per_transaction:(eur "500.00")
+           ~daily:(eur "800.00")
          |> Or_error.ok_exn)
       ~at:start
       ()
@@ -92,7 +96,9 @@ let demo () =
          ~code:Deposit
          ~effective_at:start
          ~recorded_at:start
-         [ Ledger.Posting.debit bank (eur "200.00"); Ledger.Posting.credit account (eur "200.00") ]
+         [ Ledger.Posting.debit bank (eur "200.00")
+         ; Ledger.Posting.credit account (eur "200.00")
+         ]
        |> Or_error.map ~f:List.return)
   in
   let show_balance b =
@@ -149,11 +155,21 @@ let demo () =
       (Money.Amount.to_string amount)
       (Response_code.to_string (Decision.response_code decision))
       (Sexp.to_string [%sexp (decision : Decision.t)]);
-    let b = book b (Booking.authorized b card auth ~event_id:("evt-" ^ id) ~at:request.at) in
+    let b =
+      book b (Booking.authorized b card auth ~event_id:("evt-" ^ id) ~at:request.at)
+    in
     show_balance b;
     auth, b
   in
-  let clear b auth ~id ?(direction = Settlement.Direction.Debit) ?(final = true) amount ~hours =
+  let clear
+    b
+    auth
+    ~id
+    ?(direction = Settlement.Direction.Debit)
+    ?(final = true)
+    amount
+    ~hours
+    =
     let clearing =
       Settlement.Clearing.create
         ~id:(Ids.Clearing_id.of_string id)
@@ -173,7 +189,9 @@ let demo () =
       id
       (Sexp.to_string [%sexp (direction : Settlement.Direction.t)])
       (Money.Amount.to_string amount);
-    let b = book b (Booking.settled chart b card clearing outcome ~event_id:("evt-" ^ id)) in
+    let b =
+      book b (Booking.settled chart b card clearing outcome ~event_id:("evt-" ^ id))
+    in
     show_balance b;
     let auth =
       match outcome with
@@ -182,9 +200,15 @@ let demo () =
     in
     clearing, auth, b
   in
-  let coffee, b = authorize b ~id:"a1" ~name:"COFFEE BAR" ~mcc:5814 (eur "4.20") ~hours:1 in
-  let dinner, b = authorize b ~id:"a2" ~name:"RESTAURANT" ~mcc:5812 (eur "40.00") ~hours:10 in
-  let _, b = authorize b ~id:"a3" ~name:"ELECTRONICS" ~mcc:5732 (eur "600.00") ~hours:11 in
+  let coffee, b =
+    authorize b ~id:"a1" ~name:"COFFEE BAR" ~mcc:5814 (eur "4.20") ~hours:1
+  in
+  let dinner, b =
+    authorize b ~id:"a2" ~name:"RESTAURANT" ~mcc:5812 (eur "40.00") ~hours:10
+  in
+  let _, b =
+    authorize b ~id:"a3" ~name:"ELECTRONICS" ~mcc:5732 (eur "600.00") ~hours:11
+  in
   let c1, coffee, b = clear b coffee ~id:"c1" (eur "4.20") ~hours:24 in
   let c2, dinner, b = clear b dinner ~id:"c2" (eur "46.00") ~hours:25 in
   let c3, coffee, b = clear b coffee ~id:"c3" ~direction:Credit (eur "4.20") ~hours:200 in

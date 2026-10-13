@@ -2,8 +2,8 @@ open! Core
 open Card_core
 open Helpers
 
-(* The standard flows from authorization to clearing, booked in a ledger. Each step
-   prints the entries it books and the balances after it. *)
+(* The standard flows from authorization to clearing, booked in a ledger. Each step prints
+   the entries it books and the balances after it. *)
 
 let card = active_card ()
 
@@ -59,7 +59,9 @@ let%expect_test "approve, then clear in full" =
 
 let%expect_test "declined for insufficient funds: nothing is booked" =
   let b = ledger ~deposit:(eur "10.00") () in
-  let decision, auth = authorize (input ~available:(eur "10.00") (request (eur "12.50"))) in
+  let decision, auth =
+    authorize (input ~available:(eur "10.00") (request (eur "12.50")))
+  in
   print_s [%sexp (decision : Decision.t)];
   show_entries (Booking.authorized b card auth ~event_id:"evt-auth" ~at:start);
   [%expect {| (Decline Insufficient_funds) |}]
@@ -72,13 +74,22 @@ let%expect_test "partial settlement: a split shipment cleared in two parts" =
     settle b auth (clearing ~id:"clr-1" ~final:false (eur "25.00")) ~event_id:"evt-clr-1"
   in
   let auth = auth_of outcome in
-  print_s [%sexp (auth.status : Authorization.Status.t), (Authorization.open_hold auth : Money.Amount.t)];
+  print_s
+    [%sexp
+      (auth.status : Authorization.Status.t)
+      , (Authorization.open_hold auth : Money.Amount.t)];
   show_balances b;
   (* The second and last part is smaller than what is left: the rest is released in the
      same entry. *)
-  let outcome, b = settle b auth (clearing ~id:"clr-2" (eur "30.00")) ~event_id:"evt-clr-2" in
+  let outcome, b =
+    settle b auth (clearing ~id:"clr-2" (eur "30.00")) ~event_id:"evt-clr-2"
+  in
   let auth = auth_of outcome in
-  print_s [%sexp (auth.status : Authorization.Status.t), (auth.captured : Money.Amount.t), (auth.released : Money.Amount.t)];
+  print_s
+    [%sexp
+      (auth.status : Authorization.Status.t)
+      , (auth.captured : Money.Amount.t)
+      , (auth.released : Money.Amount.t)];
   show_balances b;
   [%expect
     {|
@@ -110,12 +121,21 @@ let%expect_test "partial settlement: a split shipment cleared in two parts" =
 let%expect_test "reversal: partial, then the rest" =
   let b = ledger () in
   let auth, b = approve b (eur "40.00") in
-  let auth, released = Authorization.reverse auth ~amount:(eur "15.00") ~at:(at 5) () |> Or_error.ok_exn in
-  let b = book b (Booking.reversed b auth ~amount:released ~event_id:"evt-rev-1" ~at:(at 5)) in
-  print_s [%sexp (auth.status : Authorization.Status.t), (Authorization.open_hold auth : Money.Amount.t)];
+  let auth, released =
+    Authorization.reverse auth ~amount:(eur "15.00") ~at:(at 5) () |> Or_error.ok_exn
+  in
+  let b =
+    book b (Booking.reversed b auth ~amount:released ~event_id:"evt-rev-1" ~at:(at 5))
+  in
+  print_s
+    [%sexp
+      (auth.status : Authorization.Status.t)
+      , (Authorization.open_hold auth : Money.Amount.t)];
   show_balances b;
   let auth, released = Authorization.reverse auth ~at:(at 6) () |> Or_error.ok_exn in
-  let entries = Booking.reversed b auth ~amount:released ~event_id:"evt-rev-2" ~at:(at 6) in
+  let entries =
+    Booking.reversed b auth ~amount:released ~event_id:"evt-rev-2" ~at:(at 6)
+  in
   show_entries entries;
   let b = book b entries in
   print_s [%sexp (auth.status : Authorization.Status.t)];
@@ -148,7 +168,9 @@ let%expect_test "refund: a new credit weeks later, the hold is not touched" =
   let auth, b = approve b (eur "30.00") in
   let outcome, b = settle b auth (clearing (eur "30.00")) ~event_id:"evt-clr" in
   let auth = auth_of outcome in
-  let refund = clearing ~id:"clr-refund" ~direction:Credit ~at:(at (60 * 24 * 20)) (eur "30.00") in
+  let refund =
+    clearing ~id:"clr-refund" ~direction:Credit ~at:(at (60 * 24 * 20)) (eur "30.00")
+  in
   let outcome, b = settle b auth refund ~event_id:"evt-refund" in
   let auth = auth_of outcome in
   print_s [%sexp (auth.status : Authorization.Status.t), (auth.refunded : Money.Amount.t)];
@@ -237,7 +259,13 @@ let%expect_test "expiry, then a late clearing still posts" =
   show_entries entries;
   let b = book b entries in
   print_s [%sexp (auth.status : Authorization.Status.t), (released : Money.Amount.t)];
-  let outcome, b = settle b auth (clearing ~at:(Time_ns.add later (days 1)) (eur "20.00")) ~event_id:"evt-clr" in
+  let outcome, b =
+    settle
+      b
+      auth
+      (clearing ~at:(Time_ns.add later (days 1)) (eur "20.00"))
+      ~event_id:"evt-clr"
+  in
   print_s [%sexp ((auth_of outcome).status : Authorization.Status.t)];
   show_balances b;
   [%expect
@@ -265,7 +293,11 @@ let%expect_test "a clearing that arrives after the hold lapsed, before anyone ex
   let b = ledger () in
   let auth, b = approve b (eur "20.00") in
   let outcome, b =
-    settle b auth (clearing ~at:(Time_ns.add start (days 9)) (eur "20.00")) ~event_id:"evt-clr"
+    settle
+      b
+      auth
+      (clearing ~at:(Time_ns.add start (days 9)) (eur "20.00"))
+      ~event_id:"evt-clr"
   in
   print_s [%sexp ((auth_of outcome).status : Authorization.Status.t)];
   show_balances b;
@@ -304,12 +336,15 @@ let%expect_test "a clearing with no authorization, in another currency, with our
   let c =
     clearing
       ~auth_id:None
-      ~merchant:(merchant ~name:"BOOKSHOP NYC" ~country:(Country.of_string "US") (usd "25.00"))
+      ~merchant:
+        (merchant ~name:"BOOKSHOP NYC" ~country:(Country.of_string "US") (usd "25.00"))
       ~rate
       ~fx_fee
       (usd "25.00")
   in
-  print_s [%sexp (c.billing : Money.Amount.t), (Settlement.Clearing.total_charged c : Money.Amount.t)];
+  print_s
+    [%sexp
+      (c.billing : Money.Amount.t), (Settlement.Clearing.total_charged c : Money.Amount.t)];
   let outcome = Settlement.settle c ~auth:None |> Or_error.ok_exn in
   let entries = Booking.settled chart b card c outcome ~event_id:"evt-clr" in
   show_entries entries;
@@ -339,14 +374,25 @@ let%expect_test "a webhook delivered twice is booked once" =
   let b0 = ledger () in
   (* Replay the opening records into the journal. *)
   List.iter (Ledger.Balances.accounts b0) ~f:(fun a ->
-    ignore (Ledger.Journal.open_account journal a |> Or_error.ok_exn : Ledger.Journal.Append_result.t));
-  let deposit = Ledger.Balances.find_entry b0 (Ledger.Idempotency_key.of_string "deposit-1") in
+    ignore
+      (Ledger.Journal.open_account journal a |> Or_error.ok_exn
+       : Ledger.Journal.Append_result.t));
+  let deposit =
+    Ledger.Balances.find_entry b0 (Ledger.Idempotency_key.of_string "deposit-1")
+  in
   Option.iter deposit ~f:(fun (_, e) ->
-    ignore (Ledger.Journal.append_entry journal e |> Or_error.ok_exn : Ledger.Journal.Append_result.t));
+    ignore
+      (Ledger.Journal.append_entry journal e |> Or_error.ok_exn
+       : Ledger.Journal.Append_result.t));
   let _, auth = authorize (input (request (eur "10.00"))) in
   let deliver () =
     let entries =
-      Booking.authorized (Ledger.Journal.balances journal) card auth ~event_id:"evt-auth" ~at:start
+      Booking.authorized
+        (Ledger.Journal.balances journal)
+        card
+        auth
+        ~event_id:"evt-auth"
+        ~at:start
     in
     match entries with
     | Error e -> print_s [%sexp (e : Error.t)]
@@ -358,8 +404,7 @@ let%expect_test "a webhook delivered twice is booked once" =
   deliver ();
   deliver ();
   Ledger.Journal.close journal;
-  [%expect
-    {|
+  [%expect {|
     appended
     duplicate
     |}]

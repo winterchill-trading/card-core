@@ -18,7 +18,8 @@ let%expect_test "stable bin_prot digests" =
     ; "Dispute", [%bin_digest: Dispute.Stable.V1.t]
     ]
     ~f:(fun (name, digest) -> printf "%-16s %s\n" name digest);
-  [%expect {|
+  [%expect
+    {|
     Response_code    d9a8da25d5656b016fb4dbdc2e4197fb
     Masked_pan       ad817a0bc36a121fd4e9b42633523ff4
     Limits           bfac8330a0950dc904abb5086e52c41b
@@ -32,7 +33,14 @@ let%expect_test "stable bin_prot digests" =
     |}]
 ;;
 
-let round_trip (type a) (module M : Binable.S with type t = a) ~sexp_of ~of_sexp ~equal (v : a) =
+let round_trip
+  (type a)
+  (module M : Binable.S with type t = a)
+  ~sexp_of
+  ~of_sexp
+  ~equal
+  (v : a)
+  =
   let bytes = Binable.to_string (module M) v in
   let back = Binable.of_string (module M) bytes in
   assert (equal back v);
@@ -40,7 +48,13 @@ let round_trip (type a) (module M : Binable.S with type t = a) ~sexp_of ~of_sexp
 ;;
 
 let%expect_test "records round trip through bin_prot and sexp" =
-  let _, auth = authorize (input (request ~three_ds:{ trans_status = Y; eci = Some 5; cavv_present = true } (eur "12.50"))) in
+  let _, auth =
+    authorize
+      (input
+         (request
+            ~three_ds:{ trans_status = Y; eci = Some 5; cavv_present = true }
+            (eur "12.50")))
+  in
   round_trip
     (module Authorization.Stable.V1)
     ~sexp_of:Authorization.Stable.V1.sexp_of_t
@@ -61,7 +75,8 @@ let%expect_test "records round trip through bin_prot and sexp" =
     ~equal:Settlement.Clearing.Stable.V1.equal
     c;
   print_s [%sexp (auth : Authorization.Stable.V1.t)];
-  [%expect {|
+  [%expect
+    {|
     ((id auth-1) (card_id card-1) (network_txn_id ntx-1) (kind Auth)
      (requested "12.50 EUR") (approved "12.50 EUR")
      (merchant
@@ -80,7 +95,8 @@ let%expect_test "decoding validates: a full card number cannot be read back as l
   let bytes = Binable.to_string (module String) "4111111111111111" in
   print_s
     [%sexp
-      (Or_error.try_with (fun () -> Binable.of_string (module Masked_pan.Last4.Stable.V1) bytes)
+      (Or_error.try_with (fun () ->
+         Binable.of_string (module Masked_pan.Last4.Stable.V1) bytes)
        : Masked_pan.Last4.t Or_error.t)];
   [%expect {| (Error ("Masked_pan.Last4: expected exactly four digits" (length 16))) |}]
 ;;

@@ -27,8 +27,9 @@ module Op = struct
       ; 1., map (both idx cents) ~f:(fun (i, c) -> Increment (i, c))
       ; 1., map (both idx (Int.gen_incl 1 100)) ~f:(fun (i, p) -> Reverse (i, p))
       ; ( 3.
-        , map (tuple3 idx (Int.gen_incl 1 150) Bool.quickcheck_generator) ~f:(fun (i, p, f) ->
-            Clear (i, p, f)) )
+        , map
+            (tuple3 idx (Int.gen_incl 1 150) Bool.quickcheck_generator)
+            ~f:(fun (i, p, f) -> Clear (i, p, f)) )
       ; 1., map cents ~f:(fun c -> Clear_without_auth c)
       ; 1., map (both idx cents) ~f:(fun (i, c) -> Refund (i, c))
       ; 1., map (Int.gen_incl 1 10) ~f:(fun d -> Wait_days d)
@@ -50,10 +51,13 @@ let deposit = eur "300.00"
 let card = active_card ~limits:(Limits.unlimited Money.Currency.eur) ()
 
 let replace auths (a : Authorization.t) =
-  List.map auths ~f:(fun (x : Authorization.t) -> if Ids.Auth_id.equal x.id a.id then a else x)
+  List.map auths ~f:(fun (x : Authorization.t) ->
+    if Ids.Auth_id.equal x.id a.id then a else x)
 ;;
 
-let nth auths i = if List.is_empty auths then None else List.nth auths (i % List.length auths)
+let nth auths i =
+  if List.is_empty auths then None else List.nth auths (i % List.length auths)
+;;
 
 let percent amount p = Amount.mul_ratio amount (Q.of_ints p 100) ~rounding:Down
 
@@ -80,7 +84,15 @@ let step st (op : Op.t) =
       if Authorization.is_due_to_expire a ~now
       then (
         let a, _ = Authorization.expire a ~now |> Or_error.ok_exn in
-        let b = book st.b (Booking.expired st.b a ~event_id:(event ^ Ids.Auth_id.to_string a.id) ~at:now) in
+        let b =
+          book
+            st.b
+            (Booking.expired
+               st.b
+               a
+               ~event_id:(event ^ Ids.Auth_id.to_string a.id)
+               ~at:now)
+        in
         { st with b; auths = replace st.auths a })
       else st)
   | Approve c ->
@@ -115,18 +127,28 @@ let step st (op : Op.t) =
              (cents c)
          in
          let a = Authorization.increment a r ~approved:(cents c) |> Or_error.ok_exn in
-         let b = book st.b (Booking.incremented st.b a ~amount:(cents c) ~event_id:event ~at:now) in
+         let b =
+           book
+             st.b
+             (Booking.incremented st.b a ~amount:(cents c) ~event_id:event ~at:now)
+         in
          { st with b; auths = replace st.auths a })
      | Some _ | None -> st)
   | Reverse (i, p) ->
     (match nth st.auths i with
-     | Some a when Amount.is_positive (Authorization.open_hold a) && not (Authorization.is_due_to_expire a ~now) ->
+     | Some a
+       when Amount.is_positive (Authorization.open_hold a)
+            && not (Authorization.is_due_to_expire a ~now) ->
        let amount = percent (Authorization.open_hold a) p in
        if Amount.is_zero amount
        then st
        else (
-         let a, released = Authorization.reverse a ~amount ~at:now () |> Or_error.ok_exn in
-         let b = book st.b (Booking.reversed st.b a ~amount:released ~event_id:event ~at:now) in
+         let a, released =
+           Authorization.reverse a ~amount ~at:now () |> Or_error.ok_exn
+         in
+         let b =
+           book st.b (Booking.reversed st.b a ~amount:released ~event_id:event ~at:now)
+         in
          { st with b; auths = replace st.auths a })
      | Some _ | None -> st)
   | Clear (i, p, final) ->
@@ -178,7 +200,9 @@ let check st =
       ledger_remaining
       ~expect:(Authorization.open_hold a)
       ~message:(Ids.Auth_id.to_string a.id));
-  let open_holds = Amount.sum cur (List.map st.auths ~f:Authorization.open_hold) |> Or_error.ok_exn in
+  let open_holds =
+    Amount.sum cur (List.map st.auths ~f:Authorization.open_hold) |> Or_error.ok_exn
+  in
   [%test_result: Amount.t] (Ledger.Balances.held st.b account cur) ~expect:open_holds;
   (* Money is conserved: what the cardholder has, plus what they owe us, is the deposit
      less every clearing plus every refund. *)
@@ -234,36 +258,51 @@ let%test_unit "limits are never exceeded by approved authorizations" =
     ~sexp_of:[%sexp_of: (int * bool * bool * int) list]
     ~f:(fun requests ->
       let _, auths =
-        List.foldi requests ~init:(start, []) ~f:(fun i (now, auths) (c, atm, partial, minutes) ->
-          let now = Time_ns.add now (Time_ns.Span.of_int_min (minutes * 10)) in
-          let mcc = if atm then Mcc.atm else grocery in
-          let r =
-            request
-              ~auth_id:(sprintf "a%d" i)
-              ~network_txn_id:(sprintf "n%d" i)
-              ~merchant:(merchant ~mcc (cents c))
-              ~partial_supported:partial
-              ~at:now
-              (cents c)
-          in
-          let usage = Authorization.usage auths ~currency:Money.Currency.eur ~now |> Or_error.ok_exn in
-          let _, auth = authorize (input ~card ~usage ~available:(eur "100000.00") r) in
-          now, auth :: auths)
+        List.foldi
+          requests
+          ~init:(start, [])
+          ~f:(fun i (now, auths) (c, atm, partial, minutes) ->
+            let now = Time_ns.add now (Time_ns.Span.of_int_min (minutes * 10)) in
+            let mcc = if atm then Mcc.atm else grocery in
+            let r =
+              request
+                ~auth_id:(sprintf "a%d" i)
+                ~network_txn_id:(sprintf "n%d" i)
+                ~merchant:(merchant ~mcc (cents c))
+                ~partial_supported:partial
+                ~at:now
+                (cents c)
+            in
+            let usage =
+              Authorization.usage auths ~currency:Money.Currency.eur ~now
+              |> Or_error.ok_exn
+            in
+            let _, auth = authorize (input ~card ~usage ~available:(eur "100000.00") r) in
+            now, auth :: auths)
       in
-      let approved = List.filter auths ~f:(fun a -> Authorization.Status.is_open a.status) in
+      let approved =
+        List.filter auths ~f:(fun a -> Authorization.Status.is_open a.status)
+      in
       let by key =
         List.map approved ~f:(fun (a : Authorization.t) -> key a, a)
         |> List.Assoc.sort_and_group ~compare:[%compare: string]
       in
-      let date (a : Authorization.t) = Date.to_string (Time_ns.to_date a.created_at ~zone:Time_float.Zone.utc) in
+      let date (a : Authorization.t) =
+        Date.to_string (Time_ns.to_date a.created_at ~zone:Time_float.Zone.utc)
+      in
       let month (a : Authorization.t) = String.prefix (date a) 7 in
-      let sum xs = Amount.sum Money.Currency.eur (List.map xs ~f:Authorization.spend) |> Or_error.ok_exn in
+      let sum xs =
+        Amount.sum Money.Currency.eur (List.map xs ~f:Authorization.spend)
+        |> Or_error.ok_exn
+      in
       let cap = Option.value_exn in
-      List.iter approved ~f:(fun a -> assert (Amount.( <= ) (Authorization.spend a) (cap limits.per_transaction)));
+      List.iter approved ~f:(fun a ->
+        assert (Amount.( <= ) (Authorization.spend a) (cap limits.per_transaction)));
       List.iter (by date) ~f:(fun (_, xs) ->
         assert (Amount.( <= ) (sum xs) (cap limits.daily));
         let atm = List.filter xs ~f:(fun a -> Mcc.is_atm a.merchant.mcc) in
         assert (Amount.( <= ) (sum atm) (cap limits.atm_daily));
         assert (List.length atm <= cap limits.atm_daily_count));
-      List.iter (by month) ~f:(fun (_, xs) -> assert (Amount.( <= ) (sum xs) (cap limits.monthly))))
+      List.iter (by month) ~f:(fun (_, xs) ->
+        assert (Amount.( <= ) (sum xs) (cap limits.monthly))))
 ;;

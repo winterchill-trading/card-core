@@ -19,7 +19,9 @@ let%expect_test "transition table" =
 let%expect_test "decline code per status" =
   List.iter Card.Status.all ~f:(fun status ->
     print_s
-      [%sexp (status : Card.Status.t), (Card.Status.decline_code status : Response_code.t option)]);
+      [%sexp
+        (status : Card.Status.t)
+        , (Card.Status.decline_code status : Response_code.t option)]);
   [%expect
     {|
     (Requested (57))
@@ -55,8 +57,7 @@ let%expect_test "an active card past its expiry date declines with 54" =
   let after = Time_ns.of_string_with_utc_offset "2029-11-01 00:00:00Z" in
   print_s [%sexp (Card.unusable card ~now:after : Response_code.t option)];
   print_s [%sexp ((Card.expire_if_due card ~now:after).status : Card.Status.t)];
-  [%expect
-    {|
+  [%expect {|
     (54)
     Expired
     |}]
