@@ -16,6 +16,9 @@ type t =
   | Risk_review of string (** 05: held for review, declined meanwhile *)
   | Risk_block of string (** 05 *)
   | Unmatched_increment (** 05: an incremental authorization for no open authorization *)
+  | Declined_upstream of Response_code.t
+  (** declined before it reached us, by stand-in or the provider's defaults, with the
+      code they answered *)
 [@@deriving sexp, compare, equal]
 
 val response_code : t -> Response_code.t

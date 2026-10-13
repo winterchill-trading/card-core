@@ -29,6 +29,7 @@ module Stable = struct
       | Risk_review of string
       | Risk_block of string
       | Unmatched_increment
+      | Declined_upstream of Response_code.Stable.V1.t
     [@@deriving bin_io, sexp, compare, equal]
   end
 end
@@ -48,4 +49,5 @@ let response_code : t -> Response_code.t = function
   | Risk_review _
   | Risk_block _
   | Unmatched_increment -> Do_not_honor
+  | Declined_upstream code -> code
 ;;
