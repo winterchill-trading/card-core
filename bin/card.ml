@@ -6,9 +6,11 @@ let codes =
     ~summary:"List authorization response codes with their retry category"
     (Command.Param.return (fun () ->
        List.iter Response_code.all_known ~f:(fun code ->
-         printf
-           "%s  %-20s %s\n%!"
-           (Response_code.to_string code)
+         print_endline
+         @@ String.rstrip
+         @@ sprintf
+              "%s  %-20s %s"
+              (Response_code.to_string code)
            (match Response_code.category code with
             | None -> "approved"
             | Some c -> Sexp.to_string [%sexp (c : Response_code.Category.t)])

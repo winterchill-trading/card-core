@@ -1,7 +1,7 @@
 Response codes and whether a merchant may retry:
 
   $ card codes
-  00  approved             
+  00  approved
   05  Generic              retry allowed
   14  Never_approve        do not retry
   46  Never_approve        do not retry
