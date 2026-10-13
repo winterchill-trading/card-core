@@ -15,10 +15,10 @@
     approved, e.g. stand-in when we did not answer in time) enter [Authorized] directly
     and cannot be declined. An incremental authorization adds to an open one under the
     same network transaction id and does not extend its validity. Reversals may be
-    partial. A clearing may take part of the hold (several clearings per authorization
-    are allowed), all of it, more than it (tips, hotel extras: the excess is new spend),
-    or arrive after the hold was released (it still posts). Refunds are separate credits
-    and never reopen the hold.
+    partial. A clearing may take part of the hold (several clearings per authorization are
+    allowed), all of it, more than it (tips, hotel extras: the excess is new spend), or
+    arrive after the hold was released (it still posts). Refunds are separate credits and
+    never reopen the hold.
 
     All amounts except [merchant.amount] are in the card's billing currency. *)
 
@@ -106,16 +106,16 @@ type t = private
   }
 [@@deriving sexp_of, compare, equal]
 
-(** 7 days; 30 days for an estimated authorization or a lodging, vehicle rental or
-    cruise merchant. A simplification of the scheme tables (Visa allows 5 to 30 days by
-    case, Mastercard 7 or 30) that never releases earlier than the merchant expects for
-    the common cases. *)
+(** 7 days; 30 days for an estimated authorization or a lodging, vehicle rental or cruise
+    merchant. A simplification of the scheme tables (Visa allows 5 to 30 days by case,
+    Mastercard 7 or 30) that never releases earlier than the merchant expects for the
+    common cases. *)
 val hold_validity : mcc:Mcc.t -> estimated:bool -> Time_ns.Span.t
 
 (** {2 Deciding} *)
 
-(** A new [Pending] authorization; fails for an [Incremental] request (see
-    {!increment}) or an amount that is not positive. *)
+(** A new [Pending] authorization; fails for an [Incremental] request (see {!increment})
+    or an amount that is not positive. *)
 val pending : Request.t -> t Or_error.t
 
 (** [Pending -> Authorized]; [amount] is at most [requested] (less for a partial
@@ -129,7 +129,12 @@ val approve
   -> t Or_error.t
 
 (** [Pending -> Declined]. *)
-val decline : t -> Decline_reason.t -> decided_by:Decided_by.t -> at:Time_ns.t -> t Or_error.t
+val decline
+  :  t
+  -> Decline_reason.t
+  -> decided_by:Decided_by.t
+  -> at:Time_ns.t
+  -> t Or_error.t
 
 (** An advice: recorded as decided upstream, [Authorized] for an approval (code 00, for
     [approved]) or [Declined (Declined_upstream code)] otherwise. *)
@@ -155,7 +160,12 @@ val spend : t -> Money.Amount.t
 
 (** Releases [amount] (default: all of the open hold); the rest stays open. Fails above
     the open hold or on a closed authorization. Returns the amount released. *)
-val reverse : t -> ?amount:Money.Amount.t -> at:Time_ns.t -> unit -> (t * Money.Amount.t) Or_error.t
+val reverse
+  :  t
+  -> ?amount:Money.Amount.t
+  -> at:Time_ns.t
+  -> unit
+  -> (t * Money.Amount.t) Or_error.t
 
 val is_due_to_expire : t -> now:Time_ns.t -> bool
 
@@ -175,8 +185,8 @@ end
 (** Applies a debit clearing of [amount]. [final] marks the merchant's last clearing for
     this authorization (single clearing, or the last of a split shipment) and releases
     what is left of the hold. A clearing after the hold was reversed or expired takes
-    nothing from it and is all excess. Fails for a pending or declined authorization:
-    such a clearing is booked as one without an authorization. *)
+    nothing from it and is all excess. Fails for a pending or declined authorization: such
+    a clearing is booked as one without an authorization. *)
 val apply_clearing
   :  t
   -> amount:Money.Amount.t
@@ -188,9 +198,12 @@ val apply_clearing
 val record_refund : t -> amount:Money.Amount.t -> at:Time_ns.t -> t Or_error.t
 
 (** Spend of the card's authorizations created on the UTC date of [now] and in its UTC
-    calendar month, in [currency]; ATM withdrawals counted when their spend is
-    positive. *)
-val usage : t list -> currency:Money.Currency.t -> now:Time_ns.t -> Limits.Usage.t Or_error.t
+    calendar month, in [currency]; ATM withdrawals counted when their spend is positive. *)
+val usage
+  :  t list
+  -> currency:Money.Currency.t
+  -> now:Time_ns.t
+  -> Limits.Usage.t Or_error.t
 
 module Stable : sig
   module V1 : sig

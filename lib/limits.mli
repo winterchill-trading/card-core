@@ -10,8 +10,8 @@
 open! Core
 
 module Usage : sig
-  (** Approved spend that counts against the caps: authorizations still open or
-      cleared, net of reversals. Built by {!Authorization.usage}. *)
+  (** Approved spend that counts against the caps: authorizations still open or cleared,
+      net of reversals. Built by {!Authorization.usage}. *)
   type t =
     { daily : Money.Amount.t
     ; monthly : Money.Amount.t
@@ -59,8 +59,8 @@ type t = private
   }
 [@@deriving sexp_of, compare, equal]
 
-(** Every cap in [currency] and positive, the count positive. Toggles default to on,
-    block lists to empty. *)
+(** Every cap in [currency] and positive, the count positive. Toggles default to on, block
+    lists to empty. *)
 val create
   :  ?per_transaction:Money.Amount.t
   -> ?daily:Money.Amount.t
@@ -82,8 +82,8 @@ val with_online : t -> bool -> t
 val with_contactless : t -> bool -> t
 val with_atm : t -> bool -> t
 
-(** The first rule the transaction breaks, checked in this order: channel toggles, MCC
-    and country block lists, per-transaction cap, daily and monthly caps, ATM amount and
+(** The first rule the transaction breaks, checked in this order: channel toggles, MCC and
+    country block lists, per-transaction cap, daily and monthly caps, ATM amount and
     count. [amount] is in the billing currency; a different currency is an error. *)
 val check
   :  t

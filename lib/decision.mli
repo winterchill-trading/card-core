@@ -1,6 +1,6 @@
 (** The issuer's answer to one authorization request: a pure function of the card, its
-    limits and recent spend, the funding account's available balance, the SCA state and
-    an optional risk hook.
+    limits and recent spend, the funding account's available balance, the SCA state and an
+    optional risk hook.
 
     Checks run in a fixed order and the first failure decides the response code:
 
@@ -37,13 +37,13 @@ module Input : sig
   type t =
     { card : Card.t
     ; usage : Limits.Usage.t (** {!Authorization.usage} of the card's authorizations *)
-    ; available : Money.Amount.t (** funding account available balance, billing currency *)
+    ; available : Money.Amount.t
+    (** funding account available balance, billing currency *)
     ; sca_policy : Card_sca.Policy.t
     ; sca_counters : Payments_core.Sca.Counters.t
     ; request : Authorization.Request.t
     ; open_auth : Authorization.t option
-    (** for an incremental request: the authorization with the same network
-        transaction id *)
+    (** for an incremental request: the authorization with the same network transaction id *)
     }
   [@@deriving sexp_of]
 end
@@ -62,4 +62,8 @@ val response_code : t -> Response_code.t
 
 (** Applies the decision to the pending authorization built from the same request
     ({!Authorization.pending}), with the SCA evidence the ledger keeps. *)
-val apply : t -> Authorization.t -> request:Authorization.Request.t -> Authorization.t Or_error.t
+val apply
+  :  t
+  -> Authorization.t
+  -> request:Authorization.Request.t
+  -> Authorization.t Or_error.t

@@ -7,8 +7,8 @@
     payments, mail and telephone orders); failing all that the answer is the soft decline
     [1A], which asks the merchant to authenticate and try again.
 
-    Every payment let through without SCA names its exemption and RTS article, because
-    the issuer then carries the loss if it was fraud (PSD2 art. 74(2)). The cumulative
+    Every payment let through without SCA names its exemption and RTS article, because the
+    issuer then carries the loss if it was fraud (PSD2 art. 74(2)). The cumulative
     counters for the low-value exemptions come from payments-core's
     {!Payments_core.Sca.Counters}; they are per cardholder, and kept by the caller. *)
 
@@ -28,12 +28,12 @@ module Initiator : sig
 end
 
 module Policy : sig
-  (** Which merchant-requested exemptions the issuer honours. Contactless, low value
-      and recurring are always honoured within their limits. *)
+  (** Which merchant-requested exemptions the issuer honours. Contactless, low value and
+      recurring are always honoured within their limits. *)
   type t =
     { tra : bool
-    (** transaction risk analysis (art. 18). Off until the issuer tracks its own
-        rolling fraud rates against the RTS annex bands. *)
+    (** transaction risk analysis (art. 18). Off until the issuer tracks its own rolling
+        fraud rates against the RTS annex bands. *)
     ; trusted_beneficiary : bool (** art. 13: the merchant is on the payer's list *)
     ; corporate : bool (** art. 17: dedicated corporate processes *)
     }
@@ -74,9 +74,8 @@ module Outcome : sig
 
   (** What the ledger keeps on the payment, as [Ledger.Sca_evidence]: an exemption is
       recorded with its RTS article (["Art 16 Low_value_remote"]), authentication as a
-      [Challenge] named ["3ds"] or ["cardholder_verified"] (the card scheme, not us,
-      holds the authentication record). [None] for [Required] and [Failed], which
-      book nothing. *)
+      [Challenge] named ["3ds"] or ["cardholder_verified"] (the card scheme, not us, holds
+      the authentication record). [None] for [Required] and [Failed], which book nothing. *)
   val evidence : t -> Request.t -> Ledger.Sca_evidence.t option
 end
 

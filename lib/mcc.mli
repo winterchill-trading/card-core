@@ -20,23 +20,32 @@ val of_string_or_error : string -> t Or_error.t
 
 (** {2 Codes with special handling} *)
 
-val atm : t (** 6011 *)
+(** 6011 *)
+val atm : t
 
-val quasi_cash : t (** 6051 *)
+(** 6051 *)
+val quasi_cash : t
 
-val money_transfer : t (** 4829 *)
+(** 4829 *)
+val money_transfer : t
 
-val stored_value : t (** 6540 *)
+(** 6540 *)
+val stored_value : t
 
-val gambling : t (** 7995 *)
+(** 7995 *)
+val gambling : t
 
-val lodging : t (** 7011 *)
+(** 7011 *)
+val lodging : t
 
-val vehicle_rental : t (** 7512 *)
+(** 7512 *)
+val vehicle_rental : t
 
-val cruise : t (** 4411 *)
+(** 4411 *)
+val cruise : t
 
-val fuel : t (** 5542, automated fuel dispenser *)
+(** 5542, automated fuel dispenser *)
+val fuel : t
 
 val is_atm : t -> bool
 

@@ -1,6 +1,6 @@
-(** Why an authorization was declined, and the response code that goes back to the
-    scheme. Reasons name the rule; the cardholder-facing text is the caller's job and
-    must not reveal risk rules (a risk decline reads as a generic decline). *)
+(** Why an authorization was declined, and the response code that goes back to the scheme.
+    Reasons name the rule; the cardholder-facing text is the caller's job and must not
+    reveal risk rules (a risk decline reads as a generic decline). *)
 
 open! Core
 
@@ -17,8 +17,8 @@ type t =
   | Risk_block of string (** 05 *)
   | Unmatched_increment (** 05: an incremental authorization for no open authorization *)
   | Declined_upstream of Response_code.t
-  (** declined before it reached us, by stand-in or the provider's defaults, with the
-      code they answered *)
+  (** declined before it reached us, by stand-in or the provider's defaults, with the code
+      they answered *)
 [@@deriving sexp, compare, equal]
 
 val response_code : t -> Response_code.t

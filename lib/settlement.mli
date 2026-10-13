@@ -1,14 +1,14 @@
 (** Clearing (presentment) of card transactions and how each one settles against its
     authorization.
 
-    A debit clearing carries the final amount, which may differ from the authorization:
-    a tip, a fuel or hotel estimate, a split shipment cleared in parts, or a conversion
-    when the merchant charges in another currency than the card's. Each one takes
+    A debit clearing carries the final amount, which may differ from the authorization: a
+    tip, a fuel or hotel estimate, a split shipment cleared in parts, or a conversion when
+    the merchant charges in another currency than the card's. Each one takes
     [min amount open_hold] from the hold; anything above is fresh spend, flagged for
-    review when it exceeds {!excess_review_bps} of the approved amount. A clearing with
-    no authorization (offline, under the floor limit, or one that already expired) posts
-    in full. A credit clearing is a refund: a new credit to the cardholder, never a
-    reversal of the hold.
+    review when it exceeds {!excess_review_bps} of the approved amount. A clearing with no
+    authorization (offline, under the floor limit, or one that already expired) posts in
+    full. A credit clearing is a refund: a new credit to the cardholder, never a reversal
+    of the hold.
 
     When the merchant currency differs from the billing currency, the billing amount is
     the scheme's conversion (given, or computed with [rate]), and our FX fee, if any, is
@@ -47,10 +47,9 @@ module Clearing : sig
   [@@deriving sexp_of, compare, equal]
 
   (** Without [billing], the billing amount is [merchant.amount] when the currencies
-      match, else [Rate.convert rate merchant.amount] (half-even). [rate] must go from
-      the merchant currency to [billing_currency]. [fx_fee] (a {!Money.Fee.t} in the
-      billing currency, rounded in our favour) applies only to a debit in another
-      currency. *)
+      match, else [Rate.convert rate merchant.amount] (half-even). [rate] must go from the
+      merchant currency to [billing_currency]. [fx_fee] (a {!Money.Fee.t} in the billing
+      currency, rounded in our favour) applies only to a debit in another currency. *)
   val create
     :  id:Ids.Clearing_id.t
     -> card_id:Ids.Card_id.t
@@ -93,8 +92,7 @@ module Outcome : sig
   [@@deriving sexp_of]
 end
 
-(** Applies a clearing to its authorization, if any. An authorization whose hold is due
-    to expire at the clearing time is expired first. An authorization for another card,
-    or one that is pending or declined, is ignored and the clearing posts without
-    one. *)
+(** Applies a clearing to its authorization, if any. An authorization whose hold is due to
+    expire at the clearing time is expired first. An authorization for another card, or
+    one that is pending or declined, is ignored and the clearing posts without one. *)
 val settle : Clearing.t -> auth:Authorization.t option -> Outcome.t Or_error.t

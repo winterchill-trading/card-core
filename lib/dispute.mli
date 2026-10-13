@@ -12,8 +12,8 @@
     straight to pre-arbitration if the acquirer contests. Any open stage may close as
     [Won] (the cardholder keeps the money), [Lost] or [Withdrawn].
 
-    A card-absent fraud dispute cannot be opened when 3-D Secure shifted liability to
-    the issuer ({!Three_ds.liability_shift}): the loss is ours, not the merchant's. *)
+    A card-absent fraud dispute cannot be opened when 3-D Secure shifted liability to the
+    issuer ({!Three_ds.liability_shift}): the loss is ours, not the merchant's. *)
 
 open! Core
 

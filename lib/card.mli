@@ -51,8 +51,8 @@ module Status : sig
   val can_transition : from:t -> to_:t -> bool
   val is_terminal : t -> bool
 
-  (** How an authorization on a card in this state is declined: [None] for [Active];
-      57 for [Requested] and [Frozen]; 62 for [Blocked]; 54 for [Expired]; 46 for
+  (** How an authorization on a card in this state is declined: [None] for [Active]; 57
+      for [Requested] and [Frozen]; 62 for [Blocked]; 54 for [Expired]; 46 for
       [Destroyed]. *)
   val decline_code : t -> Response_code.t option
 
@@ -90,8 +90,8 @@ val request
   -> unit
   -> t Or_error.t
 
-(** Fails when the transition is not in {!Status.transitions}; a transition to the
-    current state is a no-op, so a repeated webhook is harmless. *)
+(** Fails when the transition is not in {!Status.transitions}; a transition to the current
+    state is a no-op, so a repeated webhook is harmless. *)
 val transition : t -> to_:Status.t -> at:Time_ns.t -> t Or_error.t
 
 val activate : t -> masked_pan:Masked_pan.t -> at:Time_ns.t -> t Or_error.t
@@ -103,9 +103,8 @@ val destroy : t -> at:Time_ns.t -> t Or_error.t
 (** Fails on a terminal card or limits in another currency. *)
 val set_limits : t -> Limits.t -> at:Time_ns.t -> t Or_error.t
 
-(** Why an authorization at [now] must be declined because of the card itself: its
-    status, or an [Active] card past its expiry date (54) whose status has not caught up
-    yet. *)
+(** Why an authorization at [now] must be declined because of the card itself: its status,
+    or an [Active] card past its expiry date (54) whose status has not caught up yet. *)
 val unusable : t -> now:Time_ns.t -> Response_code.t option
 
 (** [Expired] when an [Active] or [Frozen] card is past its expiry date at [now]. *)

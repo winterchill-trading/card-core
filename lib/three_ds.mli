@@ -2,8 +2,8 @@
     Electronic Commerce Indicator (ECI) the merchant puts into the authorization.
 
     An authenticated result (ECI 05 at Visa, 02 at Mastercard) or an attempted one (06 or
-    01) moves liability for card-absent fraud disputes to the issuer; ECI 07 (Visa) or
-    00 (Mastercard) means no shift. *)
+    01) moves liability for card-absent fraud disputes to the issuer; ECI 07 (Visa) or 00
+    (Mastercard) means no shift. *)
 
 open! Core
 

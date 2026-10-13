@@ -2,8 +2,8 @@
     descriptor, a dispute note, a support comment.
 
     A candidate is a run of 13 to 19 digits, possibly grouped by single spaces or dashes,
-    that passes the Luhn check (ISO/IEC 7812-1). Text that holds one is refused or
-    masked before it is stored. *)
+    that passes the Luhn check (ISO/IEC 7812-1). Text that holds one is refused or masked
+    before it is stored. *)
 
 open! Core
 

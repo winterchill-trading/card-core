@@ -1,8 +1,8 @@
 (** The two-character answer to an authorization (ISO 8583 field 39), and how a merchant
     may react to it.
 
-    Declines are grouped as the card scheme groups them: category 1 must never be
-    retried, categories 2 to 4 may be retried (up to 20 times in 30 days at one scheme).
+    Declines are grouped as the card scheme groups them: category 1 must never be retried,
+    categories 2 to 4 may be retried (up to 20 times in 30 days at one scheme).
     [Sca_required] (["1A"]) is the soft decline that asks the merchant to run strong
     customer authentication and try again. *)
 

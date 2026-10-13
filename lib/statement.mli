@@ -1,5 +1,5 @@
-(** What one card did in a period, for the cardholder: purchases (clearings), refunds,
-    FX fees, holds still pending, and optionally declined attempts.
+(** What one card did in a period, for the cardholder: purchases (clearings), refunds, FX
+    fees, holds still pending, and optionally declined attempts.
 
     Built from the authorizations and clearings the caller has stored; the funding
     account's ledger statement is the authoritative balance view, this is the card view
