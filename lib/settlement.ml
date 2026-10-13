@@ -156,6 +156,13 @@ let settle (clearing : Clearing.t) ~auth : Outcome.t Or_error.t =
     Outcome.Refund { auth = Some auth }
   | Debit, None -> Ok Without_auth
   | Debit, Some auth ->
+    (* A hold that ran out before the clearing arrived is released first, as the ledger
+       does; the clearing then takes nothing from it. *)
+    let%bind auth =
+      if Authorization.is_due_to_expire auth ~now:at
+      then Authorization.expire auth ~now:at |> Or_error.map ~f:fst
+      else Ok auth
+    in
     let%map updated, applied =
       Authorization.apply_clearing auth ~amount:clearing.billing ~final:clearing.final ~at
     in

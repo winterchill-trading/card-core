@@ -93,7 +93,8 @@ module Outcome : sig
   [@@deriving sexp_of]
 end
 
-(** Applies a clearing to its authorization, if any. An authorization for another card,
+(** Applies a clearing to its authorization, if any. An authorization whose hold is due
+    to expire at the clearing time is expired first. An authorization for another card,
     or one that is pending or declined, is ignored and the clearing posts without
     one. *)
 val settle : Clearing.t -> auth:Authorization.t option -> Outcome.t Or_error.t
