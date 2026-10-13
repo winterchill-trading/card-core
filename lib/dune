@@ -1,0 +1,6 @@
+(library
+ (name card_core)
+ (public_name card-core)
+ (libraries core zarith money ledger payments-core)
+ (preprocess
+  (pps ppx_jane)))
