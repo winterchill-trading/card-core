@@ -7,12 +7,16 @@ let codes =
     (Command.Param.return (fun () ->
        List.iter Response_code.all_known ~f:(fun code ->
          printf
-           "%s  %-20s %s\n"
+           "%s  %-20s %s\n%!"
            (Response_code.to_string code)
            (match Response_code.category code with
             | None -> "approved"
             | Some c -> Sexp.to_string [%sexp (c : Response_code.Category.t)])
-           (if Response_code.retry_allowed code then "retry allowed" else "do not retry"))))
+           (if Response_code.is_approved code
+            then ""
+            else if Response_code.retry_allowed code
+            then "retry allowed"
+            else "do not retry"))))
 ;;
 
 let hold_expiry =
