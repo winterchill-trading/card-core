@@ -28,6 +28,12 @@ module Trans_status : sig
 
   val of_string_or_error : string -> t Or_error.t
   val to_string : t -> string
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, compare, equal, hash]
+    end
+  end
 end
 
 type t =

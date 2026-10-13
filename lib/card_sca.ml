@@ -3,10 +3,16 @@ module Exemption = Payments_core.Sca.Exemption
 module Counters = Payments_core.Sca.Counters
 
 module Initiator = struct
-  type t =
-    | Cardholder
-    | Merchant
-  [@@deriving sexp, compare, equal, hash, enumerate, quickcheck]
+  module Stable = struct
+    module V1 = struct
+      type t =
+        | Cardholder
+        | Merchant
+      [@@deriving bin_io, sexp, compare, equal, hash, enumerate, quickcheck]
+    end
+  end
+
+  include Stable.V1
 end
 
 module Policy = struct

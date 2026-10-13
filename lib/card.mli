@@ -27,6 +27,12 @@ module Kind : sig
     | Virtual
     | Physical
   [@@deriving sexp, compare, equal, hash, enumerate, quickcheck]
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, compare, equal, hash]
+    end
+  end
 end
 
 module Status : sig
@@ -49,6 +55,12 @@ module Status : sig
       57 for [Requested] and [Frozen]; 62 for [Blocked]; 54 for [Expired]; 46 for
       [Destroyed]. *)
   val decline_code : t -> Response_code.t option
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, compare, equal, hash]
+    end
+  end
 end
 
 type t = private

@@ -19,6 +19,12 @@ module Initiator : sig
     | Cardholder
     | Merchant (** a merchant-initiated payment (recurring, card on file) *)
   [@@deriving sexp, compare, equal, hash, enumerate, quickcheck]
+
+  module Stable : sig
+    module V1 : sig
+      type nonrec t = t [@@deriving bin_io, sexp, compare, equal, hash]
+    end
+  end
 end
 
 module Policy : sig
