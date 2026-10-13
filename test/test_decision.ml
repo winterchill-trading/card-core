@@ -5,19 +5,21 @@ open Helpers
 let show ?risk input =
   let decision, auth = authorize ?risk input in
   print_s
-    [%sexp
-      (Response_code.to_string (Decision.response_code decision) : string)
-    , (decision : Decision.t)
-    , ~status:(auth.status : Authorization.Status.t)
-    , ~open_hold:(Authorization.open_hold auth : Money.Amount.t)]
+    [%message
+      (Response_code.to_string (Decision.response_code decision))
+        (decision : Decision.t)
+        ~status:(auth.status : Authorization.Status.t)
+        ~open_hold:(Authorization.open_hold auth : Money.Amount.t)]
 ;;
 
 let%expect_test "approve" =
   show (input (request (eur "12.50")));
   [%expect
     {|
-    (00 (Approve (amount "12.50 EUR") (partial false) (sca Authenticated))
-     (auth.status Authorized) ("Authorization.open_hold auth" "12.50 EUR"))
+    (00
+     (decision
+      (Approve (amount "12.50 EUR") (partial false) (sca Authenticated)))
+     (status Authorized) (open_hold "12.50 EUR"))
     |}]
 ;;
 
@@ -25,8 +27,8 @@ let%expect_test "decline: insufficient funds" =
   show (input ~available:(eur "10.00") (request (eur "12.50")));
   [%expect
     {|
-    (51 (Decline Insufficient_funds) (auth.status (Declined Insufficient_funds))
-     ("Authorization.open_hold auth" "0.00 EUR"))
+    (51 (decision (Decline Insufficient_funds))
+     (status (Declined Insufficient_funds)) (open_hold "0.00 EUR"))
     |}]
 ;;
 
@@ -34,8 +36,9 @@ let%expect_test "partial approval when the merchant supports it" =
   show (input ~available:(eur "10.00") (request ~partial_supported:true (eur "12.50")));
   [%expect
     {|
-    (00 (Approve (amount "10.00 EUR") (partial true) (sca Authenticated))
-     (auth.status Authorized) ("Authorization.open_hold auth" "10.00 EUR"))
+    (00
+     (decision (Approve (amount "10.00 EUR") (partial true) (sca Authenticated)))
+     (status Authorized) (open_hold "10.00 EUR"))
     |}]
 ;;
 
@@ -51,17 +54,14 @@ let%expect_test "decline: frozen, blocked, requested, expired card" =
   show (input (request ~at:(Time_ns.of_string_with_utc_offset "2029-11-01 00:00:00Z") (eur "1.00")));
   [%expect
     {|
-    (57 (Decline (Card_status Frozen))
-     (auth.status (Declined (Card_status Frozen)))
-     ("Authorization.open_hold auth" "0.00 EUR"))
-    (62 (Decline (Card_status Blocked))
-     (auth.status (Declined (Card_status Blocked)))
-     ("Authorization.open_hold auth" "0.00 EUR"))
-    (57 (Decline (Card_status Requested))
-     (auth.status (Declined (Card_status Requested)))
-     ("Authorization.open_hold auth" "0.00 EUR"))
-    (54 (Decline Card_expired) (auth.status (Declined Card_expired))
-     ("Authorization.open_hold auth" "0.00 EUR"))
+    (57 (decision (Decline (Card_status Frozen)))
+     (status (Declined (Card_status Frozen))) (open_hold "0.00 EUR"))
+    (62 (decision (Decline (Card_status Blocked)))
+     (status (Declined (Card_status Blocked))) (open_hold "0.00 EUR"))
+    (57 (decision (Decline (Card_status Requested)))
+     (status (Declined (Card_status Requested))) (open_hold "0.00 EUR"))
+    (54 (decision (Decline Card_expired)) (status (Declined Card_expired))
+     (open_hold "0.00 EUR"))
     |}]
 ;;
 
