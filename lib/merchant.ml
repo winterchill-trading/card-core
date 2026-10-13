@@ -24,7 +24,9 @@ module Stable = struct
       let open Or_error.Let_syntax in
       let%bind _ = Pan_guard.check ~field:"merchant name" t.name in
       if Money.Amount.is_negative t.amount
-      then Or_error.error_s [%message "Merchant: negative amount" (t.amount : Money.Amount.t)]
+      then
+        Or_error.error_s
+          [%message "Merchant: negative amount" (t.amount : Money.Amount.t)]
       else Ok t
     ;;
 

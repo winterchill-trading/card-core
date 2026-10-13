@@ -77,8 +77,8 @@ let limits_check (input : Input.t) : (unit, Decline_reason.t) Result.t =
   with
   | Ok (Ok ()) -> Ok ()
   | Ok (Error violation) -> Error (Limit violation)
-  (* Currencies were checked just before, so this cannot happen; decline rather than
-     raise inside an authorization. *)
+  (* Currencies were checked just before, so this cannot happen; decline rather than raise
+     inside an authorization. *)
   | Error _ -> Error Wrong_currency
 ;;
 

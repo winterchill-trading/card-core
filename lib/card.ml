@@ -129,7 +129,9 @@ let set_limits t (limits : Limits.t) ~at =
   if Status.is_terminal t.status
   then Or_error.error_s [%message "Card: closed card" ~card:(t.id : Ids.Card_id.t)]
   else if not (Money.Currency.equal limits.currency t.currency)
-  then Or_error.error_s [%message "Card: limits in another currency" ~card:(t.id : Ids.Card_id.t)]
+  then
+    Or_error.error_s
+      [%message "Card: limits in another currency" ~card:(t.id : Ids.Card_id.t)]
   else Ok { t with limits; updated_at = at }
 ;;
 
@@ -147,6 +149,7 @@ let unusable t ~now =
 
 let expire_if_due t ~now =
   match t.status with
-  | (Active | Frozen) when past_expiry t ~now -> { t with status = Expired; updated_at = now }
+  | (Active | Frozen) when past_expiry t ~now ->
+    { t with status = Expired; updated_at = now }
   | Requested | Active | Frozen | Blocked | Expired | Destroyed -> t
 ;;

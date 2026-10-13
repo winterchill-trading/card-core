@@ -58,7 +58,9 @@ let to_string = function
   | Other s -> s
 ;;
 
-let known_by_text = List.map all_known ~f:(fun t -> to_string t, t) |> String.Map.of_alist_exn
+let known_by_text =
+  List.map all_known ~f:(fun t -> to_string t, t) |> String.Map.of_alist_exn
+;;
 
 let of_string_or_error s =
   let valid_char c = Char.is_digit c || Char.is_uppercase c in
@@ -82,8 +84,10 @@ let category : t -> Category.t option = function
   | Approved -> None
   | Invalid_account | Closed_account | Not_permitted | Restricted_card | Fraud_security ->
     Some Never_approve
-  | Insufficient_funds | Exceeds_amount_limit | Exceeds_frequency_limit | Issuer_unavailable
-    -> Some Cannot_approve_now
+  | Insufficient_funds
+  | Exceeds_amount_limit
+  | Exceeds_frequency_limit
+  | Issuer_unavailable -> Some Cannot_approve_now
   | Expired_card | Incorrect_pin | Sca_required -> Some Data_quality
   | Do_not_honor | Other _ -> Some Generic
 ;;

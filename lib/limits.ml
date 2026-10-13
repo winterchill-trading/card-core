@@ -1,5 +1,4 @@
 open! Core
-
 module Amount = Money.Amount
 
 module Usage = struct
@@ -104,7 +103,9 @@ module Stable = struct
                   (amount : Amount.t)
                   ~currency:(t.currency : Money.Currency.t)]
           else if not (Amount.is_positive amount)
-          then Or_error.error_s [%message "Limits: cap must be positive" name (amount : Amount.t)]
+          then
+            Or_error.error_s
+              [%message "Limits: cap must be positive" name (amount : Amount.t)]
           else Ok ()
       in
       let open Or_error.Let_syntax in

@@ -14,8 +14,8 @@ let luhn_valid digits =
   !sum % 10 = 0
 ;;
 
-(* Finds digit runs where single spaces or dashes may separate groups, and returns
-   (start, stop_exclusive, digits) for each run. *)
+(* Finds digit runs where single spaces or dashes may separate groups, and returns (start,
+   stop_exclusive, digits) for each run. *)
 let runs s =
   let n = String.length s in
   let rec scan i acc =
@@ -42,9 +42,9 @@ let runs s =
   scan 0 []
 ;;
 
-(* Only whole runs are checked. Checking every 13 to 19 digit window of a longer run
-   would flag about one in ten long reference numbers, since a random window passes the
-   Luhn check one time in ten. *)
+(* Only whole runs are checked. Checking every 13 to 19 digit window of a longer run would
+   flag about one in ten long reference numbers, since a random window passes the Luhn
+   check one time in ten. *)
 let is_candidate digits =
   let n = String.length digits in
   n >= 13 && n <= 19 && luhn_valid digits

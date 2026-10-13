@@ -12,7 +12,9 @@ module Last4 = struct
       else
         (* The input is not echoed back: it may be a full card number. *)
         Or_error.error_s
-          [%message "Masked_pan.Last4: expected exactly four digits" ~length:(String.length s : int)]
+          [%message
+            "Masked_pan.Last4: expected exactly four digits"
+              ~length:(String.length s : int)]
     ;;
 
     let of_string s = of_string_or_error s |> Or_error.ok_exn
@@ -93,7 +95,8 @@ module Expiry = struct
   ;;
 
   let quickcheck_observer =
-    Quickcheck.Observer.unmap Int.quickcheck_observer ~f:(fun t -> (t.year * 100) + t.month)
+    Quickcheck.Observer.unmap Int.quickcheck_observer ~f:(fun t ->
+      (t.year * 100) + t.month)
   ;;
 
   let quickcheck_shrinker : t Quickcheck.Shrinker.t = Quickcheck.Shrinker.empty ()
@@ -133,4 +136,6 @@ type t = Stable.V1.t =
   }
 [@@deriving sexp, compare, equal, hash, quickcheck]
 
-let to_string t = sprintf "**** %s %s" (Last4.to_string t.last4) (Expiry.to_string t.expiry)
+let to_string t =
+  sprintf "**** %s %s" (Last4.to_string t.last4) (Expiry.to_string t.expiry)
+;;

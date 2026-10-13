@@ -118,7 +118,9 @@ end
 include Stable.V1
 
 let hold_validity ~mcc ~estimated =
-  if estimated || Mcc.has_long_hold mcc then Time_ns.Span.of_day 30. else Time_ns.Span.of_day 7.
+  if estimated || Mcc.has_long_hold mcc
+  then Time_ns.Span.of_day 30.
+  else Time_ns.Span.of_day 7.
 ;;
 
 let currency t = Amount.currency t.requested
@@ -135,7 +137,9 @@ let spend t = Amount.add_exn t.cleared (open_hold t)
 let positive what amount =
   if Amount.is_positive amount
   then Ok ()
-  else Or_error.error_s [%message "Authorization: amount must be positive" what (amount : Amount.t)]
+  else
+    Or_error.error_s
+      [%message "Authorization: amount must be positive" what (amount : Amount.t)]
 ;;
 
 let same_currency t amount =
@@ -252,7 +256,9 @@ let advice (r : Request.t) ~approved ~response_code ~decided_by =
   then (
     let%bind () = positive "approved" approved in
     if not (Money.Currency.equal (Amount.currency approved) (Amount.currency r.amount))
-    then Or_error.error_s [%message "Authorization: advice in another currency" (approved : Amount.t)]
+    then
+      Or_error.error_s
+        [%message "Authorization: advice in another currency" (approved : Amount.t)]
     else
       Ok
         (of_request
@@ -279,7 +285,9 @@ let increment t (r : Request.t) ~approved =
   let%bind () = same_currency t r.amount in
   let%bind () = same_currency t approved in
   let%bind () = positive "approved" approved in
-  if not (Ids.Card_id.equal t.card_id r.card_id && Ids.Network_txn_id.equal t.network_txn_id r.network_txn_id)
+  if not
+       (Ids.Card_id.equal t.card_id r.card_id
+        && Ids.Network_txn_id.equal t.network_txn_id r.network_txn_id)
   then
     Or_error.error_s
       [%message
@@ -289,7 +297,10 @@ let increment t (r : Request.t) ~approved =
   else if Amount.( > ) approved r.amount
   then Or_error.error_s [%message "Authorization: approved above the requested increment"]
   else if List.mem t.increments r.auth_id ~equal:Ids.Auth_id.equal
-  then Or_error.error_s [%message "Authorization: increment already applied" ~increment:(r.auth_id : Ids.Auth_id.t)]
+  then
+    Or_error.error_s
+      [%message
+        "Authorization: increment already applied" ~increment:(r.auth_id : Ids.Auth_id.t)]
   else
     Ok
       { t with
@@ -300,8 +311,8 @@ let increment t (r : Request.t) ~approved =
       }
 ;;
 
-(* After a release or a clearing: an authorization with nothing left on hold is closed,
-   as [Cleared] when anything cleared, else by what released it. *)
+(* After a release or a clearing: an authorization with nothing left on hold is closed, as
+   [Cleared] when anything cleared, else by what released it. *)
 let settle_status t ~closed_as =
   if Amount.is_zero (Amount.sub_exn (Amount.sub_exn t.approved t.captured) t.released)
   then if Amount.is_positive t.cleared then Status.Cleared else closed_as
@@ -321,7 +332,9 @@ let reverse t ?amount ~at () =
   then
     Or_error.error_s
       [%message
-        "Authorization: reversal above the open hold" (amount : Amount.t) ~open_hold:(hold : Amount.t)]
+        "Authorization: reversal above the open hold"
+          (amount : Amount.t)
+          ~open_hold:(hold : Amount.t)]
   else (
     let t = { t with released = Amount.add_exn t.released amount; updated_at = at } in
     Ok ({ t with status = settle_status t ~closed_as:Reversed }, amount))
@@ -360,7 +373,9 @@ end
 let apply_clearing t ~amount ~final ~at =
   let open Or_error.Let_syntax in
   let%bind () =
-    expect_status t ~expected:[ Authorized; Partially_cleared; Cleared; Reversed; Expired ]
+    expect_status
+      t
+      ~expected:[ Authorized; Partially_cleared; Cleared; Reversed; Expired ]
   in
   let%bind () = same_currency t amount in
   let%bind () = positive "clearing" amount in
@@ -393,7 +408,9 @@ let record_refund t ~amount ~at =
   match t.status with
   | Pending | Declined _ ->
     Or_error.error_s
-      [%message "Authorization: refund for an authorization that never cleared" ~auth:(t.id : Ids.Auth_id.t)]
+      [%message
+        "Authorization: refund for an authorization that never cleared"
+          ~auth:(t.id : Ids.Auth_id.t)]
   | Authorized | Partially_cleared | Cleared | Reversed | Expired ->
     Ok { t with refunded = Amount.add_exn t.refunded amount; updated_at = at }
 ;;
@@ -401,28 +418,36 @@ let record_refund t ~amount ~at =
 let usage ts ~currency ~now =
   let day = Time_ns.to_date now ~zone:Time_float.Zone.utc in
   let open Or_error.Let_syntax in
-  List.fold_result ts ~init:(Limits.Usage.zero currency) ~f:(fun (usage : Limits.Usage.t) t ->
-    let created = Time_ns.to_date t.created_at ~zone:Time_float.Zone.utc in
-    let same_month =
-      Date.year created = Date.year day && Month.equal (Date.month created) (Date.month day)
-    in
-    let spend = spend t in
-    if (not same_month) || Amount.is_zero spend
-    then Ok usage
-    else (
-      let%bind () =
-        if Money.Currency.equal (Amount.currency spend) currency
-        then Ok ()
-        else Or_error.error_s [%message "Authorization.usage: another currency" ~auth:(t.id : Ids.Auth_id.t)]
+  List.fold_result
+    ts
+    ~init:(Limits.Usage.zero currency)
+    ~f:(fun (usage : Limits.Usage.t) t ->
+      let created = Time_ns.to_date t.created_at ~zone:Time_float.Zone.utc in
+      let same_month =
+        Date.year created = Date.year day
+        && Month.equal (Date.month created) (Date.month day)
       in
-      let%map monthly = Amount.add usage.monthly spend in
-      if Date.equal created day
-      then (
-        let atm = Mcc.is_atm t.merchant.mcc in
-        { Limits.Usage.daily = Amount.add_exn usage.daily spend
-        ; monthly
-        ; atm_daily = (if atm then Amount.add_exn usage.atm_daily spend else usage.atm_daily)
-        ; atm_daily_count = (usage.atm_daily_count + if atm then 1 else 0)
-        })
-      else { usage with monthly }))
+      let spend = spend t in
+      if (not same_month) || Amount.is_zero spend
+      then Ok usage
+      else (
+        let%bind () =
+          if Money.Currency.equal (Amount.currency spend) currency
+          then Ok ()
+          else
+            Or_error.error_s
+              [%message
+                "Authorization.usage: another currency" ~auth:(t.id : Ids.Auth_id.t)]
+        in
+        let%map monthly = Amount.add usage.monthly spend in
+        if Date.equal created day
+        then (
+          let atm = Mcc.is_atm t.merchant.mcc in
+          { Limits.Usage.daily = Amount.add_exn usage.daily spend
+          ; monthly
+          ; atm_daily =
+              (if atm then Amount.add_exn usage.atm_daily spend else usage.atm_daily)
+          ; atm_daily_count = (usage.atm_daily_count + if atm then 1 else 0)
+          })
+        else { usage with monthly }))
 ;;

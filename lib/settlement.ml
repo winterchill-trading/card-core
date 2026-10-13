@@ -69,7 +69,10 @@ module Clearing = struct
     let%bind () =
       if Amount.is_positive merchant.amount
       then Ok ()
-      else Or_error.error_s [%message "Clearing: amount must be positive" ~clearing:(id : Ids.Clearing_id.t)]
+      else
+        Or_error.error_s
+          [%message
+            "Clearing: amount must be positive" ~clearing:(id : Ids.Clearing_id.t)]
     in
     let%bind billing, fx =
       if Money.Currency.equal merchant_currency billing_currency
@@ -87,7 +90,10 @@ module Clearing = struct
             if Money.Currency.equal (Money.Rate.base rate) merchant_currency
                && Money.Currency.equal (Money.Rate.quote rate) billing_currency
             then Ok ()
-            else Or_error.error_s [%message "Clearing: rate for another currency pair" (rate : Money.Rate.t)]
+            else
+              Or_error.error_s
+                [%message
+                  "Clearing: rate for another currency pair" (rate : Money.Rate.t)]
           in
           let%bind billing =
             match billing with
@@ -96,7 +102,8 @@ module Clearing = struct
           in
           let%map fee =
             match fx_fee, direction with
-            | Some schedule, Direction.Debit -> Money.Fee.compute schedule ~side:Receivable billing
+            | Some schedule, Direction.Debit ->
+              Money.Fee.compute schedule ~side:Receivable billing
             | None, _ | Some _, Direction.Credit -> Ok (Amount.zero billing_currency)
           in
           billing, Some { Fx.rate; fee })
@@ -109,11 +116,24 @@ module Clearing = struct
     in
     let%bind () =
       match fx with
-      | Some { fee; _ } when not (Money.Currency.equal (Amount.currency fee) billing_currency) ->
-        Or_error.error_s [%message "Clearing: FX fee in another currency" (fee : Amount.t)]
+      | Some { fee; _ }
+        when not (Money.Currency.equal (Amount.currency fee) billing_currency) ->
+        Or_error.error_s
+          [%message "Clearing: FX fee in another currency" (fee : Amount.t)]
       | _ -> Ok ()
     in
-    return { id; card_id; network_txn_id; auth_id; direction; merchant; billing; fx; final; at }
+    return
+      { id
+      ; card_id
+      ; network_txn_id
+      ; auth_id
+      ; direction
+      ; merchant
+      ; billing
+      ; fx
+      ; final
+      ; at
+      }
   ;;
 
   let total_charged t =

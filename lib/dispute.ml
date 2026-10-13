@@ -137,15 +137,7 @@ include Stable.V1
 
 let filing_window = Time_ns.Span.of_day 120.
 
-let open_
-  ~id
-  ~(clearing : Settlement.Clearing.t)
-  ?three_ds
-  ~scheme
-  ~reason
-  ~amount
-  ~at
-  ()
+let open_ ~id ~(clearing : Settlement.Clearing.t) ?three_ds ~scheme ~reason ~amount ~at ()
   =
   let fail msg = Or_error.error_s [%message msg ~dispute:(id : Ids.Dispute_id.t)] in
   match clearing.direction with
@@ -155,10 +147,10 @@ let open_
     then fail "Dispute: filing window closed"
     else if not (Money.Amount.is_positive amount)
     then fail "Dispute: amount must be positive"
-    else if not
-              (Money.Currency.equal
-                 (Money.Amount.currency amount)
-                 (Money.Amount.currency clearing.billing))
+    else if (not
+               (Money.Currency.equal
+                  (Money.Amount.currency amount)
+                  (Money.Amount.currency clearing.billing)))
             || Money.Amount.( > ) amount clearing.billing
     then fail "Dispute: amount above the cleared amount"
     else if Reason.equal reason Card_absent_fraud
@@ -182,20 +174,21 @@ let add_evidence t ~kind ~description ~at =
   let open Or_error.Let_syntax in
   let%bind description = Pan_guard.check ~field:"evidence description" description in
   match t.status with
-  | Closed _ -> Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
+  | Closed _ ->
+    Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
   | Open _ -> Ok { t with evidence = t.evidence @ [ { Evidence.kind; description; at } ] }
 ;;
 
 let allowed ~(category : Category.t) (from : Stage.t) (to_ : Stage.t) =
   match from, to_ with
-  | Filed, Response -> (
-    match category with
-    | Processing_error | Consumer -> true
-    | Fraud | Authorization -> false)
-  | Filed, Pre_arbitration -> (
-    match category with
-    | Fraud | Authorization -> true
-    | Processing_error | Consumer -> false)
+  | Filed, Response ->
+    (match category with
+     | Processing_error | Consumer -> true
+     | Fraud | Authorization -> false)
+  | Filed, Pre_arbitration ->
+    (match category with
+     | Fraud | Authorization -> true
+     | Processing_error | Consumer -> false)
   | Response, Pre_arbitration
   | Pre_arbitration, Pre_arbitration_response
   | Pre_arbitration_response, Arbitration -> true
@@ -204,7 +197,8 @@ let allowed ~(category : Category.t) (from : Stage.t) (to_ : Stage.t) =
 
 let advance t ~to_ ~at =
   match t.status with
-  | Closed _ -> Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
+  | Closed _ ->
+    Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
   | Open from ->
     if allowed ~category:(Reason.category t.reason) from to_
     then Ok { t with status = Open to_; stage_started_at = at }
@@ -220,7 +214,8 @@ let advance t ~to_ ~at =
 
 let close t outcome ~at =
   match t.status with
-  | Closed _ -> Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
+  | Closed _ ->
+    Or_error.error_s [%message "Dispute: closed" ~dispute:(t.id : Ids.Dispute_id.t)]
   | Open _ -> Ok { t with status = Closed outcome; stage_started_at = at }
 ;;
 

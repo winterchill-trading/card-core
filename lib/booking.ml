@@ -36,7 +36,9 @@ module Chart = struct
   ;;
 end
 
-let hold_id auth_id = Ledger.Hold_id.of_string_or_error ("card-auth:" ^ Ids.Auth_id.to_string auth_id)
+let hold_id auth_id =
+  Ledger.Hold_id.of_string_or_error ("card-auth:" ^ Ids.Auth_id.to_string auth_id)
+;;
 
 let key ~event_id leg =
   Ledger.Idempotency_key.of_string_or_error (sprintf "%s/%s" event_id leg)
@@ -44,8 +46,8 @@ let key ~event_id leg =
 
 let reference_of_auth (auth : Authorization.t) = Ids.Auth_id.to_string auth.id
 
-(* Builds legs one after the other against a scratch copy of the balances, since a
-   later leg (the fee) depends on what the earlier one left. *)
+(* Builds legs one after the other against a scratch copy of the balances, since a later
+   leg (the fee) depends on what the earlier one left. *)
 let build balances legs =
   let open Or_error.Let_syntax in
   let%map _, rev =
@@ -123,7 +125,13 @@ let expire_leg balances hold_id ~event_id ~at =
   let open Or_error.Let_syntax in
   let%bind idempotency_key = key ~event_id "expire" in
   let%map entry =
-    Ledger.Hold.expire balances ~hold_id ~idempotency_key ~effective_at:at ~recorded_at:at ()
+    Ledger.Hold.expire
+      balances
+      ~hold_id
+      ~idempotency_key
+      ~effective_at:at
+      ~recorded_at:at
+      ()
   in
   [ entry ]
 ;;
@@ -160,7 +168,9 @@ let spend_leg
     let%bind idempotency_key = key ~event_id leg in
     let debits =
       List.filter_opt
-        [ Option.some_if (Amount.is_positive from_account) (Ledger.Posting.debit card.account from_account)
+        [ Option.some_if
+            (Amount.is_positive from_account)
+            (Ledger.Posting.debit card.account from_account)
         ; Option.some_if
             (Amount.is_positive shortfall)
             (Ledger.Posting.debit (chart.card_receivable currency) shortfall)
@@ -222,8 +232,8 @@ let capture_leg
     | Some { expires_at = None; _ } | None -> false
   in
   let spend amount ~leg =
-    (* The hold entries cannot carry SCA evidence (the ledger's hold builders take
-       none), so a debit booked directly carries the authorization's. *)
+    (* The hold entries cannot carry SCA evidence (the ledger's hold builders take none),
+       so a debit booked directly carries the authorization's. *)
     spend_leg
       ?sca:auth.sca
       chart
@@ -316,7 +326,17 @@ let capture_leg
         ])
 ;;
 
-let credit_leg (chart : Chart.t) (card : Card.t) ~amount ~code ~reference ~leg ~event_id ~at _balances =
+let credit_leg
+  (chart : Chart.t)
+  (card : Card.t)
+  ~amount
+  ~code
+  ~reference
+  ~leg
+  ~event_id
+  ~at
+  _balances
+  =
   let open Or_error.Let_syntax in
   let%bind idempotency_key = key ~event_id leg in
   let%map entry =
@@ -334,7 +354,14 @@ let credit_leg (chart : Chart.t) (card : Card.t) ~amount ~code ~reference ~leg ~
   [ entry ]
 ;;
 
-let settled chart balances (card : Card.t) (clearing : Settlement.Clearing.t) outcome ~event_id =
+let settled
+  chart
+  balances
+  (card : Card.t)
+  (clearing : Settlement.Clearing.t)
+  outcome
+  ~event_id
+  =
   let open Or_error.Let_syntax in
   let reference = Ids.Clearing_id.to_string clearing.id in
   let at = clearing.at in
@@ -342,7 +369,16 @@ let settled chart balances (card : Card.t) (clearing : Settlement.Clearing.t) ou
   | Refund _ ->
     build
       balances
-      [ credit_leg chart card ~amount:clearing.billing ~code:Refund ~reference ~leg:"refund" ~event_id ~at ]
+      [ credit_leg
+          chart
+          card
+          ~amount:clearing.billing
+          ~code:Refund
+          ~reference
+          ~leg:"refund"
+          ~event_id
+          ~at
+      ]
   | Without_auth ->
     build
       balances
