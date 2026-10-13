@@ -7,6 +7,7 @@
   money
   ledger
   payments-core
+  core_unix.filename_unix
   base_quickcheck
   expect_test_helpers_core)
  (inline_tests

@@ -102,3 +102,77 @@ let authorize ?risk input =
   let auth = Authorization.pending input.request |> Or_error.ok_exn in
   decision, Decision.apply decision auth ~request:input.request |> Or_error.ok_exn
 ;;
+
+let bank = Ledger.Account_id.of_string "bank:central"
+let chart = Booking.Chart.default
+
+(** Balances with the card's funding account, a bank account, the chart's accounts, and
+    [deposit] paid in. *)
+let ledger ?(deposit = eur "100.00") () =
+  let accounts =
+    Ledger.Account.create ~purpose:Customer_funds account Liability
+    :: Ledger.Account.create ~allow_negative:true bank Asset
+    :: Booking.Chart.accounts chart ~currencies:[ Money.Currency.eur ]
+  in
+  let b =
+    List.fold accounts ~init:Ledger.Balances.empty ~f:(fun b a ->
+      Ledger.Balances.apply b { seq = Ledger.Balances.next_seq b; event = Account_opened a }
+      |> Or_error.ok_exn)
+  in
+  let entry =
+    Ledger.Entry.create
+      ~idempotency_key:(Ledger.Idempotency_key.of_string "deposit-1")
+      ~kind:(Transfer "deposit")
+      ~code:Deposit
+      ~effective_at:start
+      ~recorded_at:start
+      [ Ledger.Posting.debit bank deposit; Ledger.Posting.credit account deposit ]
+    |> Or_error.ok_exn
+  in
+  Payments_core.Booking.apply b [ entry ] |> Or_error.ok_exn
+;;
+
+let book b entries = Payments_core.Booking.apply b (Or_error.ok_exn entries) |> Or_error.ok_exn
+
+let show_balances b =
+  let cur = Money.Currency.eur in
+  let line name id f = printf "  %-22s %s\n" name (Money.Amount.to_string (f b id cur)) in
+  line "available" account Ledger.Balances.available;
+  line "held" account Ledger.Balances.held;
+  line "card settlement" (chart.card_settlement cur) Ledger.Balances.balance;
+  line "card receivable" (chart.card_receivable cur) Ledger.Balances.balance;
+  line "fee income" (chart.fee_income cur) Ledger.Balances.balance
+;;
+
+let show_entries entries =
+  List.iter (Or_error.ok_exn entries) ~f:(fun (e : Ledger.Entry.t) ->
+    printf
+      "  %s %s %s\n"
+      (Ledger.Idempotency_key.to_string e.idempotency_key)
+      (Ledger.Entry.Code.to_string e.code)
+      (Sexp.to_string [%sexp (e.kind : Ledger.Entry.Kind.t)]);
+    List.iter e.postings ~f:(fun p ->
+      printf
+        "    %s %-22s %s\n"
+        (match p.side with
+         | Debit -> "Dr"
+         | Credit -> "Cr")
+        (Ledger.Account_id.to_string p.account)
+        (Money.Amount.to_string p.amount)))
+;;
+
+let clearing ?(id = "clr-1") ?(auth_id = Some "auth-1") ?(direction = Settlement.Direction.Debit) ?(final = true) ?merchant:m ?rate ?fx_fee ?(at = at 60) amount =
+  Settlement.Clearing.create
+    ~id:(Ids.Clearing_id.of_string id)
+    ~card_id
+    ?auth_id:(Option.map auth_id ~f:Ids.Auth_id.of_string)
+    ~direction
+    ~merchant:(Option.value m ~default:(merchant amount))
+    ~billing_currency:Money.Currency.eur
+    ?rate
+    ?fx_fee
+    ~final
+    ~at
+    ()
+  |> Or_error.ok_exn
+;;
